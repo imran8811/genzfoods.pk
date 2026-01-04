@@ -1,0 +1,14 @@
+body {
+    background-color: #464646;
+    margin: 0;
+    padding: 0;
+}
+.d-flex {
+    display: flex;
+    justify-content: center;
+}
+.d-flex img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
