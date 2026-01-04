@@ -10,5 +10,5 @@ import { Header } from './components/header/header';
   styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('genz-web');
+  protected readonly title = signal('GEN Z Foods Multan');
 }
