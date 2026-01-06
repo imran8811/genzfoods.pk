@@ -9,6 +9,4 @@ import { Header } from './components/header/header';
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {
-  protected readonly title = signal('GEN Z Foods Multan');
-}
+export class App {}
