@@ -1,4 +1,12 @@
 {
-  "rootDirectory": "frontend",
-  "framework": "angular"
+  "framework": "angular",
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
 }
