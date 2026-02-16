@@ -1,0 +1,110 @@
+<section class="checkout-page">
+    <div class="container">
+        <div class="page-header">
+            <span class="hero-badge">📦 Checkout</span>
+            <h1>Complete Your <span class="accent">Order</span></h1>
+            <p>Fill in your shipping details to place your order</p>
+        </div>
+
+        @if (items().length === 0) {
+        <div class="empty-cart">
+            <span class="empty-icon">🛒</span>
+            <h2>Your cart is empty</h2>
+            <p>Add some items to your cart before checking out.</p>
+            <a routerLink="/menu" class="btn-accent">Browse Menu</a>
+        </div>
+        } @else {
+        <div class="checkout-layout">
+            <!-- Shipping Form -->
+            <div class="shipping-form">
+                <h3>📍 Shipping Details</h3>
+
+                @if (errorMessage()) {
+                <div class="error-msg">{{ errorMessage() }}</div>
+                }
+
+                <form (ngSubmit)="onSubmit()">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fullName">Full Name *</label>
+                            <input type="text" id="fullName" [(ngModel)]="fullName" name="fullName"
+                                placeholder="Your full name" autocomplete="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number *</label>
+                            <input type="tel" id="phone" [(ngModel)]="phone" name="phone"
+                                placeholder="+92 300 1234567" autocomplete="tel">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" [(ngModel)]="email" name="email" placeholder="you@example.com"
+                            autocomplete="email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Delivery Address *</label>
+                        <input type="text" id="address" [(ngModel)]="address" name="address"
+                            placeholder="Street address, area, house no." autocomplete="street-address">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="city">City *</label>
+                        <input type="text" id="city" [(ngModel)]="city" name="city" placeholder="Your city"
+                            autocomplete="address-level2">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Order Notes (optional)</label>
+                        <textarea id="notes" [(ngModel)]="notes" name="notes" rows="3"
+                            placeholder="Any special instructions for your order..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-accent btn-place-order" [disabled]="loading()">
+                        @if (loading()) {
+                        ⏳ Placing Order...
+                        } @else {
+                        🛍️ Place Order — {{ formatPrice(total()) }}
+                        }
+                    </button>
+                </form>
+            </div>
+
+            <!-- Order Summary Sidebar -->
+            <div class="order-summary">
+                <h3>🧾 Order Summary</h3>
+                <div class="summary-items">
+                    @for (ci of items(); track ci.item.name) {
+                    <div class="summary-item">
+                        <div class="summary-item-img">
+                            <img [src]="ci.item.image" [alt]="ci.item.name">
+                        </div>
+                        <div class="summary-item-info">
+                            <span class="item-name">{{ ci.item.name }}</span>
+                            <span class="item-qty">x{{ ci.quantity }}</span>
+                        </div>
+                        <span class="item-price">{{ formatPrice(ci.item.price * ci.quantity) }}</span>
+                    </div>
+                    }
+                </div>
+                <div class="summary-divider"></div>
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>{{ formatPrice(subtotal()) }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Delivery Fee</span>
+                    <span>{{ formatPrice(deliveryFee()) }}</span>
+                </div>
+                <div class="summary-divider"></div>
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <span>{{ formatPrice(total()) }}</span>
+                </div>
+                <a routerLink="/cart" class="btn-edit-cart">← Edit Cart</a>
+            </div>
+        </div>
+        }
+    </div>
+</section>

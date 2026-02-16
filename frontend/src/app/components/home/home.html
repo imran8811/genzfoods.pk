@@ -1,0 +1,70 @@
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <span class="hero-badge">🔥 New Generation of Taste</span>
+        <h1>Bold Flavors for<br><span class="accent">Bold People</span></h1>
+        <p>Fresh ingredients, crafted with passion. From sizzling burgers to stone-baked pizza — we serve food that hits
+            different.</p>
+        <div class="hero-actions">
+            <a routerLink="/menu" class="btn-accent">View Our Menu <span class="arrow">→</span></a>
+        </div>
+    </div>
+</section>
+
+<!-- Specialties Section -->
+<section class="specialties">
+    <div class="container">
+        <div class="section-title">
+            <div class="accent-line"></div>
+            <h2>Our Specialties</h2>
+            <p>Explore our handcrafted menu categories</p>
+        </div>
+        <div class="category-grid">
+            @for (cat of categories; track cat.name) {
+            <a routerLink="/menu" class="category-card">
+                <div class="card-image">
+                    <img [src]="cat.image" [alt]="cat.name" loading="lazy">
+                    <div class="card-overlay"></div>
+                </div>
+                <div class="card-content">
+                    <span class="card-emoji">{{ cat.emoji }}</span>
+                    <h3>{{ cat.name }}</h3>
+                    <p>{{ cat.description }}</p>
+                </div>
+            </a>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section class="about">
+    <div class="container">
+        <div class="about-inner">
+            <div class="about-text">
+                <div class="accent-line"></div>
+                <h2>The GEN Z Experience</h2>
+                <p>We're not just a restaurant — we're a vibe. Born from a passion for bold flavors and fresh
+                    ingredients, GEN Z Foods is where taste meets the culture of a new generation.</p>
+                <p>Every dish is crafted with care, using only the finest ingredients. From our signature smashed
+                    burgers to our hand-stretched pizza, we guarantee a dining experience that's unforgettable.</p>
+                <a routerLink="/menu" class="btn-accent">Explore Menu</a>
+            </div>
+            <div class="about-stats">
+                <div class="stat">
+                    <span class="stat-number">6+</span>
+                    <span class="stat-label">Menu Categories</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">30+</span>
+                    <span class="stat-label">Unique Items</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">Fresh Ingredients</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

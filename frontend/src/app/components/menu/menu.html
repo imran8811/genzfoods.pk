@@ -1,0 +1,59 @@
+<section class="menu-page">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <span class="hero-badge">🍽️ Explore Our Menu</span>
+            <h1>What's <span class="accent">Cooking?</span></h1>
+            <p>Handcrafted dishes made with love and the freshest ingredients</p>
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="category-tabs">
+            @for (cat of categories; track cat) {
+            <button class="tab" [class.active]="activeCategory() === cat" (click)="setCategory(cat)">
+                {{ cat }}
+            </button>
+            }
+        </div>
+
+        <!-- Menu Grid -->
+        <div class="menu-grid">
+            @for (item of filteredItems(); track item.name) {
+            <div class="menu-card">
+                <div class="card-image">
+                    <img [src]="item.image" [alt]="item.name" loading="lazy">
+                    <span class="card-category">{{ item.category }}</span>
+                    @if (getQuantity(item.name) > 0) {
+                    <span class="card-qty-badge">{{ getQuantity(item.name) }} in cart</span>
+                    }
+                </div>
+                <div class="card-body">
+                    <div class="card-info">
+                        <h3>{{ item.name }}</h3>
+                        <p>{{ item.description }}</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="price">{{ item.displayPrice }}</span>
+                        <button class="btn-order" [class.added]="addedItem() === item.name"
+                            (click)="addToCart(item)">
+                            @if (addedItem() === item.name) {
+                            ✓ Added
+                            } @else {
+                            🛒 Add to Cart
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+
+        <!-- Floating Cart Button -->
+        @if (cartItemCount() > 0) {
+        <a routerLink="/cart" class="floating-cart">
+            🛒 View Cart
+            <span class="cart-count">{{ cartItemCount() }}</span>
+        </a>
+        }
+    </div>
+</section>

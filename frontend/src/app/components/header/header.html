@@ -1,0 +1,39 @@
+<header [class.scrolled]="scrolled()">
+    <div class="header-inner">
+        <a routerLink="/" class="logo" (click)="closeMenu()">
+            <img src="images/logo.jpeg" alt="Gen Z Foods Multan" class="logo-img">
+        </a>
+
+        <nav [class.open]="mobileMenuOpen()">
+            <ul>
+                <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+                        (click)="closeMenu()">Home</a></li>
+                <li><a routerLink="/menu" routerLinkActive="active" (click)="closeMenu()">Menu</a></li>
+                <li>
+                    <a routerLink="/cart" routerLinkActive="active" (click)="closeMenu()" class="cart-link">
+                        🛒
+                        @if (cartCount() > 0) {
+                        <span class="cart-badge">{{ cartCount() }}</span>
+                        }
+                    </a>
+                </li>
+                @if (isAuthenticated()) {
+                <li class="user-greeting">
+                    <span class="user-badge">👋 {{ (user()?.name?.split(' ') ?? [''])[0] }}</span>
+                </li>
+                <li><a class="nav-link logout-link" (click)="logout()">Logout</a></li>
+                } @else {
+                <li><a routerLink="/login" routerLinkActive="active" (click)="closeMenu()">Login</a></li>
+                <li><a routerLink="/signup" routerLinkActive="active" (click)="closeMenu()">Sign
+                        Up</a></li>
+                }
+            </ul>
+        </nav>
+
+        <button class="hamburger" [class.active]="mobileMenuOpen()" (click)="toggleMenu()" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </div>
+</header>
