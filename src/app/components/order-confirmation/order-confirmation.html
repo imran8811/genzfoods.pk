@@ -8,7 +8,7 @@
 
             <div class="order-id-badge">
                 <span class="label">Order ID</span>
-                <span class="value">{{ order()!.id }}</span>
+                <span class="value">{{ order()!.orderNumber }}</span>
             </div>
 
             <!-- Order Details -->
@@ -55,6 +55,10 @@
                 <div class="summary-row">
                     <span>Delivery Fee</span>
                     <span>{{ formatPrice(order()!.deliveryFee) }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax</span>
+                    <span>{{ formatPrice(order()!.taxAmount) }}</span>
                 </div>
                 <div class="summary-divider"></div>
                 <div class="summary-row total">

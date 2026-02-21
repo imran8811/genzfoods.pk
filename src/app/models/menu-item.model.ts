@@ -1,4 +1,5 @@
 export interface MenuItem {
+  id: number;
   name: string;
   description: string;
   price: number;
@@ -8,6 +9,7 @@ export interface MenuItem {
 }
 
 export interface CartItem {
+  id: number;
   item: MenuItem;
   quantity: number;
 }
@@ -22,12 +24,14 @@ export interface ShippingDetails {
 }
 
 export interface Order {
-  id: string;
+  id: number;
+  orderNumber: string;
   items: CartItem[];
   shipping: ShippingDetails;
   subtotal: number;
   deliveryFee: number;
+  taxAmount: number;
   total: number;
-  status: 'confirmed' | 'preparing' | 'on-the-way' | 'delivered';
+  status: string;
   createdAt: Date;
 }

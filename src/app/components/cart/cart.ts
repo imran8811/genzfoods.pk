@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 
@@ -8,27 +8,30 @@ import { CartService } from '../../services/cart.service';
   templateUrl: './cart.html',
   styleUrl: './cart.scss',
 })
-export class Cart {
+export class Cart implements OnInit {
   cartService = inject(CartService);
 
   items = this.cartService.items;
   subtotal = this.cartService.subtotal;
   deliveryFee = this.cartService.deliveryFee;
   total = this.cartService.total;
+  taxAmount = this.cartService.taxAmount;
   itemCount = this.cartService.itemCount;
 
-  increment(itemName: string) {
-    const qty = this.cartService.getItemQuantity(itemName);
-    this.cartService.updateQuantity(itemName, qty + 1);
+  ngOnInit(): void {
+    this.cartService.fetchCart().subscribe();
   }
 
-  decrement(itemName: string) {
-    const qty = this.cartService.getItemQuantity(itemName);
-    this.cartService.updateQuantity(itemName, qty - 1);
+  increment(cartItemId: number, quantity: number): void {
+    this.cartService.updateQuantity(cartItemId, quantity + 1).subscribe();
   }
 
-  remove(itemName: string) {
-    this.cartService.removeItem(itemName);
+  decrement(cartItemId: number, quantity: number): void {
+    this.cartService.updateQuantity(cartItemId, quantity - 1).subscribe();
+  }
+
+  remove(cartItemId: number): void {
+    this.cartService.removeItem(cartItemId).subscribe();
   }
 
   formatPrice(price: number): string {

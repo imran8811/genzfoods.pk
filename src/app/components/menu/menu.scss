@@ -270,3 +270,23 @@
         }
     }
 }
+
+.error-msg {
+    margin: 0 auto 1.25rem;
+    max-width: 520px;
+    text-align: center;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 77, 77, 0.1);
+    border: 1px solid rgba(255, 77, 77, 0.25);
+    border-radius: 10px;
+    color: #ff4d4d;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.menu-loading {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem 0;
+    font-weight: 600;
+}

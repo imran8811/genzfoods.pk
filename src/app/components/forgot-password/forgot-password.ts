@@ -27,14 +27,13 @@ export class ForgotPassword {
     }
 
     this.loading.set(true);
-    setTimeout(() => {
-      const result = this.authService.requestPasswordReset(this.email);
+    this.authService.requestPasswordReset(this.email).subscribe(result => {
       if (result.success) {
         this.successMessage.set(result.message);
       } else {
         this.errorMessage.set(result.message);
       }
       this.loading.set(false);
-    }, 600);
+    });
   }
 }

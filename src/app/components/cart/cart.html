@@ -17,7 +17,7 @@
         <div class="cart-layout">
             <!-- Cart Items -->
             <div class="cart-items">
-                @for (ci of items(); track ci.item.name) {
+                @for (ci of items(); track ci.id) {
                 <div class="cart-item">
                     <div class="item-image">
                         <img [src]="ci.item.image" [alt]="ci.item.name">
@@ -30,12 +30,12 @@
                         </div>
                         <div class="item-actions">
                             <div class="qty-control">
-                                <button (click)="decrement(ci.item.name)" class="qty-btn">−</button>
+                                <button (click)="decrement(ci.id, ci.quantity)" class="qty-btn">−</button>
                                 <span class="qty-value">{{ ci.quantity }}</span>
-                                <button (click)="increment(ci.item.name)" class="qty-btn">+</button>
+                                <button (click)="increment(ci.id, ci.quantity)" class="qty-btn">+</button>
                             </div>
                             <span class="item-total">{{ formatPrice(ci.item.price * ci.quantity) }}</span>
-                            <button class="btn-remove" (click)="remove(ci.item.name)">✕</button>
+                            <button class="btn-remove" (click)="remove(ci.id)">✕</button>
                         </div>
                     </div>
                 </div>
@@ -52,6 +52,10 @@
                 <div class="summary-row">
                     <span>Delivery Fee</span>
                     <span>{{ formatPrice(deliveryFee()) }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax (5%)</span>
+                    <span>{{ formatPrice(taxAmount()) }}</span>
                 </div>
                 <div class="summary-divider"></div>
                 <div class="summary-row total">

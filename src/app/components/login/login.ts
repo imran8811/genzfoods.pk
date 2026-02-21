@@ -26,15 +26,13 @@ export class Login {
     }
 
     this.loading.set(true);
-    // Simulate network delay
-    setTimeout(() => {
-      const result = this.authService.login(this.email, this.password);
+    this.authService.login(this.email, this.password).subscribe(result => {
       if (result.success) {
         this.router.navigate(['/']);
       } else {
         this.errorMessage.set(result.message);
       }
       this.loading.set(false);
-    }, 600);
+    });
   }
 }

@@ -7,24 +7,33 @@
             <p>Handcrafted dishes made with love and the freshest ingredients</p>
         </div>
 
+        @if (errorMessage()) {
+        <div class="error-msg">{{ errorMessage() }}</div>
+        }
+
         <!-- Category Tabs -->
+        @if (!loading()) {
         <div class="category-tabs">
-            @for (cat of categories; track cat) {
+            @for (cat of categories(); track cat) {
             <button class="tab" [class.active]="activeCategory() === cat" (click)="setCategory(cat)">
                 {{ cat }}
             </button>
             }
         </div>
+        }
 
         <!-- Menu Grid -->
+        @if (loading()) {
+        <div class="menu-loading">Loading menu from API...</div>
+        } @else {
         <div class="menu-grid">
-            @for (item of filteredItems(); track item.name) {
+            @for (item of filteredItems(); track item.id) {
             <div class="menu-card">
                 <div class="card-image">
                     <img [src]="item.image" [alt]="item.name" loading="lazy">
                     <span class="card-category">{{ item.category }}</span>
-                    @if (getQuantity(item.name) > 0) {
-                    <span class="card-qty-badge">{{ getQuantity(item.name) }} in cart</span>
+                    @if (getQuantity(item.id) > 0) {
+                    <span class="card-qty-badge">{{ getQuantity(item.id) }} in cart</span>
                     }
                 </div>
                 <div class="card-body">
@@ -34,9 +43,9 @@
                     </div>
                     <div class="card-footer">
                         <span class="price">{{ item.displayPrice }}</span>
-                        <button class="btn-order" [class.added]="addedItem() === item.name"
+                        <button class="btn-order" [class.added]="addedItem() === item.id"
                             (click)="addToCart(item)">
-                            @if (addedItem() === item.name) {
+                            @if (addedItem() === item.id) {
                             ✓ Added
                             } @else {
                             🛒 Add to Cart
@@ -47,6 +56,7 @@
             </div>
             }
         </div>
+        }
 
         <!-- Floating Cart Button -->
         @if (cartItemCount() > 0) {

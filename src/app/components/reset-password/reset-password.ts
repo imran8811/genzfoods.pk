@@ -10,6 +10,8 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './reset-password.scss',
 })
 export class ResetPassword {
+  email = '';
+  token = '';
   newPassword = '';
   confirmPassword = '';
   errorMessage = signal('');
@@ -22,13 +24,13 @@ export class ResetPassword {
     this.errorMessage.set('');
     this.successMessage.set('');
 
-    if (!this.newPassword || !this.confirmPassword) {
+    if (!this.email || !this.token || !this.newPassword || !this.confirmPassword) {
       this.errorMessage.set('Please fill in all fields.');
       return;
     }
 
-    if (this.newPassword.length < 6) {
-      this.errorMessage.set('Password must be at least 6 characters.');
+    if (this.newPassword.length < 8) {
+      this.errorMessage.set('Password must be at least 8 characters.');
       return;
     }
 
@@ -38,15 +40,16 @@ export class ResetPassword {
     }
 
     this.loading.set(true);
-    setTimeout(() => {
-      const result = this.authService.resetPassword(this.newPassword);
-      if (result.success) {
-        this.successMessage.set(result.message);
-        setTimeout(() => this.router.navigate(['/login']), 2000);
-      } else {
-        this.errorMessage.set(result.message);
-      }
-      this.loading.set(false);
-    }, 600);
+    this.authService
+      .resetPassword(this.token, this.email, this.newPassword, this.confirmPassword)
+      .subscribe(result => {
+        if (result.success) {
+          this.successMessage.set(result.message);
+          setTimeout(() => this.router.navigate(['/login']), 2000);
+        } else {
+          this.errorMessage.set(result.message);
+        }
+        this.loading.set(false);
+      });
   }
 }

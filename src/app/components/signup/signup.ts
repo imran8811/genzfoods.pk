@@ -27,8 +27,8 @@ export class Signup {
       return;
     }
 
-    if (this.password.length < 6) {
-      this.errorMessage.set('Password must be at least 6 characters.');
+    if (this.password.length < 8) {
+      this.errorMessage.set('Password must be at least 8 characters.');
       return;
     }
 
@@ -38,14 +38,13 @@ export class Signup {
     }
 
     this.loading.set(true);
-    setTimeout(() => {
-      const result = this.authService.signup(this.name, this.email, this.password);
+    this.authService.signup(this.name, this.email, this.password).subscribe(result => {
       if (result.success) {
         this.router.navigate(['/']);
       } else {
         this.errorMessage.set(result.message);
       }
       this.loading.set(false);
-    }, 600);
+    });
   }
 }
