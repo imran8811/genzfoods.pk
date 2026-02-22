@@ -11,7 +11,7 @@ export class ApiService {
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 
-  private readonly baseUrl = 'http://127.0.0.1:8000/api/v1';
+  private readonly baseUrl = 'https://api.genzfoods.pk/api/v1';
 
   get<T>(path: string, authenticated = false): Observable<T> {
     return this.http.get<T>(`${this.baseUrl}${path}`, {
