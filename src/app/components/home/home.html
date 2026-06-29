@@ -1,70 +1,125 @@
-<!-- Hero Section -->
+<!-- ===== Hero ===== -->
 <section class="hero">
-    <div class="hero-overlay"></div>
-    <div class="hero-content">
-        <span class="hero-badge">🔥 New Generation of Taste</span>
-        <h1>Bold Flavors for<br><span class="accent">Bold People</span></h1>
-        <p>Fresh ingredients, crafted with passion. From sizzling burgers to stone-baked pizza — we serve food that hits
-            different.</p>
-        <div class="hero-actions">
-            <a routerLink="/menu" class="btn-accent">View Our Menu <span class="arrow">→</span></a>
-        </div>
+  <div class="hero-glow"></div>
+  <div class="container hero-inner">
+    <span class="chip hero-chip">🔥 {{ site()?.restaurant?.tagline || 'Premium Fast Food' }}</span>
+    <h1 class="display hero-title">
+      CRAVING<br />SOMETHING <span class="text-grad">EPIC?</span>
+    </h1>
+    <p class="hero-sub">
+      Stone-baked pizzas, smash burgers, loaded fries & more — made fresh and
+      delivered hot across Multan. Built bold for the new generation.
+    </p>
+    <div class="hero-cta">
+      <a routerLink="/menu" class="btn btn-primary">Order Now</a>
+      <a routerLink="/menu" fragment="deals" class="btn btn-ghost">View Deals</a>
     </div>
+    <div class="hero-stats">
+      <div><strong>{{ categories().length || 9 }}+</strong><span>Categories</span></div>
+      <div><strong>{{ deals().length || 22 }}</strong><span>Hot Deals</span></div>
+      <div><strong>⚡</strong><span>Quick Delivery</span></div>
+    </div>
+  </div>
 </section>
 
-<!-- Specialties Section -->
-<section class="specialties">
-    <div class="container">
-        <div class="section-title">
-            <div class="accent-line"></div>
-            <h2>Our Specialties</h2>
-            <p>Explore our handcrafted menu categories</p>
-        </div>
-        <div class="category-grid">
-            @for (cat of categories; track cat.name) {
-            <a routerLink="/menu" class="category-card">
-                <div class="card-image">
-                    <img [src]="cat.image" [alt]="cat.name" loading="lazy">
-                    <div class="card-overlay"></div>
-                </div>
-                <div class="card-content">
-                    <span class="card-emoji">{{ cat.emoji }}</span>
-                    <h3>{{ cat.name }}</h3>
-                    <p>{{ cat.description }}</p>
-                </div>
-            </a>
-            }
-        </div>
+<!-- ===== Featured Deals ===== -->
+<section class="section" id="deals">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Save Big</span>
+      <h2>Hot <span class="text-yellow">Deals</span></h2>
+      <p>Bundle up and save — pizzas, burgers and combos at unbeatable prices.</p>
     </div>
+
+    @if (featuredDeals().length) {
+      <div class="deals-row">
+        @for (deal of featuredDeals(); track deal.id) {
+          <a routerLink="/menu" fragment="deals" class="card deal-card fade-up">
+            <div class="deal-top">
+              @if (deal.tag) { <span class="badge badge-special">{{ deal.tag }}</span> }
+              <span class="deal-emoji">🍕</span>
+            </div>
+            <div class="deal-body">
+              <h3>{{ deal.name }}</h3>
+              <p>{{ deal.description }}</p>
+              <div class="deal-foot">
+                <span class="price"><span class="cur">Rs</span> {{ deal.price | number }}</span>
+                <span class="deal-go">Order →</span>
+              </div>
+            </div>
+          </a>
+        }
+      </div>
+    } @else {
+      <div class="center muted">Loading deals…</div>
+    }
+  </div>
 </section>
 
-<!-- About Section -->
-<section class="about">
-    <div class="container">
-        <div class="about-inner">
-            <div class="about-text">
-                <div class="accent-line"></div>
-                <h2>The GEN Z Experience</h2>
-                <p>We're not just a restaurant — we're a vibe. Born from a passion for bold flavors and fresh
-                    ingredients, GEN Z Foods is where taste meets the culture of a new generation.</p>
-                <p>Every dish is crafted with care, using only the finest ingredients. From our signature smashed
-                    burgers to our hand-stretched pizza, we guarantee a dining experience that's unforgettable.</p>
-                <a routerLink="/menu" class="btn-accent">Explore Menu</a>
-            </div>
-            <div class="about-stats">
-                <div class="stat">
-                    <span class="stat-number">6+</span>
-                    <span class="stat-label">Menu Categories</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-number">30+</span>
-                    <span class="stat-label">Unique Items</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-number">100%</span>
-                    <span class="stat-label">Fresh Ingredients</span>
-                </div>
-            </div>
-        </div>
+<!-- ===== Categories ===== -->
+<section class="section cats">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">The Menu</span>
+      <h2>Explore by <span class="text-yellow">Category</span></h2>
+      <p>From cheesy pizzas to crispy wings — pick your craving.</p>
     </div>
+
+    <div class="cat-grid">
+      @for (cat of categories(); track cat.id) {
+        <a routerLink="/menu" [fragment]="cat.slug" class="card cat-card fade-up">
+          @if (metaFor(cat.slug).image) {
+            <div class="cat-img" [style.backgroundImage]="'url(' + metaFor(cat.slug).image + ')'"></div>
+          } @else {
+            <div class="cat-img emoji">{{ metaFor(cat.slug).emoji }}</div>
+          }
+          <div class="cat-info">
+            <div class="cat-row">
+              <h3>{{ cat.name }}</h3>
+              <span class="cat-count">{{ cat.items.length }}</span>
+            </div>
+            <p>{{ metaFor(cat.slug).blurb }}</p>
+          </div>
+        </a>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ===== Signature ===== -->
+@if (signature(); as sig) {
+  <section class="section">
+    <div class="container signature">
+      <div class="sig-art">⭐</div>
+      <div class="sig-text">
+        <span class="eyebrow">Signature</span>
+        <h2 class="display">{{ sig.name }}</h2>
+        <p>Our pride and joy — the boldest, most loaded creation on the menu. Once you try it, there's no going back.</p>
+        <a routerLink="/menu" fragment="pizza" class="btn btn-yellow">Get it now</a>
+      </div>
+    </div>
+  </section>
+}
+
+<!-- ===== Visit / Info ===== -->
+<section class="section visit" id="visit">
+  <div class="container visit-grid">
+    <div class="visit-card card">
+      <h3>📍 Find Us</h3>
+      <p>{{ site()?.restaurant?.address || 'Kacha Phatak, Sher Shah Road, Multan' }}</p>
+      <h3 class="mt">🕑 Open</h3>
+      <p>{{ site()?.restaurant?.timing || '02:00 PM - 2:00 AM' }}</p>
+      <h3 class="mt">📞 Call to Order</h3>
+      <p>{{ site()?.restaurant?.phone || '03 000-911-000' }}</p>
+    </div>
+    <div class="visit-features">
+      <h3>Why Gen Z?</h3>
+      <div class="feat-chips">
+        @for (f of site()?.restaurant?.features || []; track f) {
+          <span class="chip">{{ f }}</span>
+        }
+      </div>
+      <a routerLink="/menu" class="btn btn-primary mt-lg">Start your order</a>
+    </div>
+  </div>
 </section>

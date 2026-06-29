@@ -1,49 +1,50 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { CatalogService } from '../../services/catalog.service';
+import { Category, Deal, SiteInfo } from '../../models/catalog.model';
+
+interface CatMeta { emoji: string; image?: string; blurb: string; }
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink],
+  imports: [RouterLink, DecimalPipe],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
 export class Home {
-  categories = [
-    {
-      name: 'Pizza',
-      description: 'Hand-tossed, stone-baked pizza with premium toppings',
-      image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&h=400&fit=crop',
-      emoji: '🍕'
-    },
-    {
-      name: 'Burgers',
-      description: 'Juicy smashed burgers with signature sauces',
-      image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&h=400&fit=crop',
-      emoji: '🍔'
-    },
-    {
-      name: 'Wraps',
-      description: 'Fresh tortilla wraps loaded with flavor',
-      image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=600&h=400&fit=crop',
-      emoji: '🌯'
-    },
-    {
-      name: 'Pasta',
-      description: 'Creamy and classic Italian pasta dishes',
-      image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=600&h=400&fit=crop',
-      emoji: '🍝'
-    },
-    {
-      name: 'Sandwiches',
-      description: 'Gourmet sandwiches crafted to perfection',
-      image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&h=400&fit=crop',
-      emoji: '🥪'
-    },
-    {
-      name: 'Paratha Rolls',
-      description: 'Flaky paratha stuffed with spiced fillings & chutneys',
-      image: 'https://images.unsplash.com/photo-1632788843852-b3056740c914?w=600&h=400&fit=crop',
-      emoji: '🫓'
-    }
-  ];
+  private catalog = inject(CatalogService);
+
+  site = signal<SiteInfo | null>(null);
+  categories = signal<Category[]>([]);
+  deals = signal<Deal[]>([]);
+
+  featuredDeals = computed(() => this.deals().slice(0, 6));
+  signature = computed(() =>
+    this.categories()
+      .flatMap(c => c.items)
+      .find(i => i.is_signature),
+  );
+
+  private meta: Record<string, CatMeta> = {
+    pizza: { emoji: '🍕', image: 'images/menu/pizza.jpg', blurb: 'Stone-baked, loaded with cheese' },
+    burgers: { emoji: '🍔', image: 'images/menu/burgers.png', blurb: 'Juicy smash & crispy zingers' },
+    wraps: { emoji: '🌯', image: '', blurb: 'Rolled fresh, packed with flavour' },
+    sandwich: { emoji: '🥪', image: '', blurb: 'Gourmet stacks done right' },
+    'cold-drinks': { emoji: '🥤', image: 'images/menu/cold-drinks.png', blurb: 'Ice-cold, every size' },
+    'paratha-roll': { emoji: '🫓', image: '', blurb: 'Flaky paratha, spiced fillings' },
+    starters: { emoji: '🍟', image: 'images/menu/starters.png', blurb: 'Fries, wings & crispy bites' },
+    pasta: { emoji: '🍝', image: '', blurb: 'Creamy, cheesy, comforting' },
+    dips: { emoji: '🥣', image: '', blurb: 'The perfect sidekick' },
+  };
+
+  constructor() {
+    this.catalog.getSite().subscribe({ next: s => this.site.set(s), error: () => {} });
+    this.catalog.getMenu().subscribe({ next: c => this.categories.set(c), error: () => {} });
+    this.catalog.getDeals().subscribe({ next: d => this.deals.set(d), error: () => {} });
+  }
+
+  metaFor(slug: string): CatMeta {
+    return this.meta[slug] ?? { emoji: '🍽️', image: '', blurb: 'Freshly made for you' };
+  }
 }

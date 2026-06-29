@@ -1,129 +1,102 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { catchError, map, Observable, of, switchMap, tap } from 'rxjs';
-import { CartItem, Order, ShippingDetails } from '../models/menu-item.model';
+import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
-import { CartService } from './cart.service';
+import { CartLine, DeliveryDetails, PlacedOrder } from '../models/catalog.model';
 
-interface ShippingAddressResponse {
-  address: {
-    id: number;
+const LAST_ORDER_KEY = 'genz_last_order';
+
+interface ApiOrderItem {
+  name: string;
+  variant_label: string | null;
+  selections: string[] | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}
+interface ApiOrder {
+  order_number: string;
+  subtotal: number;
+  delivery_fee: number;
+  total_amount: number;
+  payment_method: 'cod' | 'online';
+  placed_at: string | null;
+  shipping: {
+    name: string; phone: string; address_line_1: string;
+    area: string | null; city: string; landmark: string | null;
   };
+  items: ApiOrderItem[];
 }
 
-interface CheckoutResponse {
-  message: string;
-  order: {
-    id: number;
-    order_number: string;
-    status: string;
-    subtotal: string | number;
-    delivery_fee: string | number;
-    tax_amount: string | number;
-    total_amount: string | number;
-    shipping_name: string;
-    shipping_phone: string;
-    shipping_address_line_1: string;
-    shipping_city: string;
-    notes: string | null;
-    placed_at: string;
-    items: Array<{
-      id: number;
-      food_name: string;
-      quantity: number;
-      unit_price: string | number;
-      line_total: string | number;
-    }>;
-  };
-}
-
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class OrderService {
   private api = inject(ApiService);
-  private cartService = inject(CartService);
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
 
-  private lastOrder = signal<Order | null>(null);
+  /** Place a real order against the backend (requires auth token). */
+  place(input: {
+    delivery: DeliveryDetails;
+    paymentMethod: 'cod' | 'online';
+    lines: CartLine[];
+  }): Observable<PlacedOrder> {
+    const items = input.lines
+      .filter(l => l.kind === 'item')
+      .map(l => ({ variant_id: l.refId, quantity: l.quantity }));
+    const deals = input.lines
+      .filter(l => l.kind === 'deal')
+      .map(l => ({ deal_id: l.refId, quantity: l.quantity, selections: l.selections ?? [] }));
 
-  latestOrder = computed(() => this.lastOrder());
+    const payload = {
+      items,
+      deals,
+      delivery: input.delivery,
+      payment_method: input.paymentMethod,
+    };
 
-  placeOrder(shipping: ShippingDetails): Observable<{ success: boolean; message: string }> {
-    return this.api
-      .post<ShippingAddressResponse>(
-        '/shipping-addresses',
-        {
-          label: 'Primary',
-          recipient_name: shipping.fullName,
-          phone: shipping.phone,
-          address_line_1: shipping.address,
-          city: shipping.city,
-          postal_code: '00000',
-          country: 'Pakistan',
-          is_default: true,
-        },
-        true
-      )
-      .pipe(
-        switchMap(addressResponse =>
-          this.api.post<CheckoutResponse>(
-            '/checkout',
-            {
-              shipping_address_id: addressResponse.address.id,
-              payment_method: 'cod',
-              notes: shipping.notes || null,
-            },
-            true
-          )
-        ),
-        tap(response => {
-          const order = this.mapApiOrder(response.order, shipping);
-          this.lastOrder.set(order);
-          this.cartService.fetchCart().subscribe();
-        }),
-        map(response => ({
-          success: true,
-          message: response.message || 'Order placed successfully.',
-        })),
-        catchError(error =>
-          of({
-            success: false,
-            message: this.api.getErrorMessage(error, 'Unable to place your order.'),
-          })
-        )
-      );
+    return this.api.post<{ order: ApiOrder }>('/checkout', payload, true).pipe(
+      map(res => this.toPlacedOrder(res.order, input.delivery)),
+    );
   }
 
-  private mapApiOrder(apiOrder: CheckoutResponse['order'], shipping: ShippingDetails): Order {
-    const items: CartItem[] = apiOrder.items.map(item => {
-      const unitPrice = Number(item.unit_price);
+  getLastOrder(): PlacedOrder | null {
+    if (!this.isBrowser) return null;
+    try {
+      const raw = localStorage.getItem(LAST_ORDER_KEY);
+      return raw ? (JSON.parse(raw) as PlacedOrder) : null;
+    } catch {
+      return null;
+    }
+  }
 
-      return {
-        id: item.id,
-        quantity: item.quantity,
-        item: {
-          id: item.id,
-          name: item.food_name,
-          description: 'Prepared fresh for your order.',
-          price: unitPrice,
-          displayPrice: `Rs. ${unitPrice.toLocaleString()}`,
-          image:
-            'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop',
-          category: 'Menu',
-        },
-      };
-    });
+  private toPlacedOrder(order: ApiOrder, delivery: DeliveryDetails): PlacedOrder {
+    const lines: CartLine[] = order.items.map((it, i) => ({
+      key: `o-${i}`,
+      kind: it.selections && it.selections.length ? 'deal' : 'item',
+      refId: 0,
+      name: it.name,
+      variantLabel: it.variant_label,
+      image: null,
+      unitPrice: it.unit_price,
+      quantity: it.quantity,
+      selections: it.selections ?? undefined,
+    }));
 
-    return {
-      id: apiOrder.id,
-      orderNumber: apiOrder.order_number,
-      items,
-      shipping,
-      subtotal: Number(apiOrder.subtotal),
-      deliveryFee: Number(apiOrder.delivery_fee),
-      taxAmount: Number(apiOrder.tax_amount),
-      total: Number(apiOrder.total_amount),
-      status: apiOrder.status,
-      createdAt: new Date(apiOrder.placed_at),
+    const placed: PlacedOrder = {
+      orderNumber: order.order_number,
+      lines,
+      delivery,
+      paymentMethod: order.payment_method,
+      subtotal: order.subtotal,
+      deliveryFee: order.delivery_fee,
+      total: order.total_amount,
+      placedAt: order.placed_at ?? new Date().toISOString(),
     };
+
+    if (this.isBrowser) {
+      try { localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(placed)); } catch { /* ignore */ }
+    }
+    return placed;
   }
 }

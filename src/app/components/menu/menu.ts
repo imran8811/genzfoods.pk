@@ -1,74 +1,204 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { MenuItem } from '../../models/menu-item.model';
+import {
+  AfterViewInit, Component, ElementRef, OnDestroy, OnInit,
+  PLATFORM_ID, computed, inject, signal,
+} from '@angular/core';
+import { DecimalPipe, isPlatformBrowser } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { CatalogService } from '../../services/catalog.service';
 import { CartService } from '../../services/cart.service';
-import { FoodCatalogService } from '../../services/food-catalog.service';
+import { Category, Deal, MenuItem, Variant } from '../../models/catalog.model';
+
+interface Tab { slug: string; name: string; }
 
 @Component({
   selector: 'app-menu',
-  imports: [RouterLink],
+  imports: [RouterLink, DecimalPipe, FormsModule],
   templateUrl: './menu.html',
   styleUrl: './menu.scss',
 })
-export class Menu implements OnInit {
-  private cartService = inject(CartService);
-  private foodCatalogService = inject(FoodCatalogService);
+export class Menu implements OnInit, AfterViewInit, OnDestroy {
+  private catalog = inject(CatalogService);
+  private cart = inject(CartService);
+  private route = inject(ActivatedRoute);
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
 
-  menuItems = signal<MenuItem[]>([]);
-  activeCategory = signal('All');
-  addedItem = signal<number | null>(null);
+  categories = signal<Category[]>([]);
+  deals = signal<Deal[]>([]);
   loading = signal(true);
-  errorMessage = signal('');
+  activeTab = signal<string>('');
 
-  categories = computed(() => {
-    const unique = new Set(this.menuItems().map(item => item.category));
-    return ['All', ...Array.from(unique)];
+  private chosenVariant = signal<Record<number, number>>({});
+  toast = signal<string>('');
+
+  activeDeal = signal<Deal | null>(null);
+  dealPicks = signal<string[]>([]);
+
+  cartCount = this.cart.itemCount;
+  cartSubtotal = this.cart.subtotal;
+
+  private observer: IntersectionObserver | null = null;
+  private suppressSpy = false;
+  private pendingFragment: string | null = null;
+
+  tabs = computed<Tab[]>(() => {
+    const cats = this.categories().map(c => ({ slug: c.slug, name: c.name }));
+    return this.deals().length ? [...cats, { slug: 'deals', name: 'Deals' }] : cats;
   });
 
-  filteredItems = computed(() => {
-    const cat = this.activeCategory();
-    if (cat === 'All') {
-      return this.menuItems();
+  dealGroups = computed(() => {
+    const groups = new Map<string, Deal[]>();
+    for (const d of this.deals()) {
+      const g = d.group ?? 'Deals';
+      if (!groups.has(g)) groups.set(g, []);
+      groups.get(g)!.push(d);
     }
-
-    return this.menuItems().filter(item => item.category === cat);
+    return Array.from(groups, ([name, items]) => ({ name, items }));
   });
-
-  cartItemCount = this.cartService.itemCount;
 
   ngOnInit(): void {
-    this.foodCatalogService.getFoodItems().subscribe({
-      next: items => {
-        this.menuItems.set(items);
+    this.pendingFragment = this.route.snapshot.fragment;
+    this.catalog.getMenu().subscribe({
+      next: cats => {
+        this.categories.set(cats);
+        if (cats.length) this.activeTab.set(cats[0].slug);
         this.loading.set(false);
+        this.scheduleSpy();
       },
-      error: () => {
-        this.errorMessage.set('Unable to load menu from API. Please try again.');
-        this.loading.set(false);
-      },
+      error: () => this.loading.set(false),
     });
-
-    this.cartService.fetchCart().subscribe();
+    this.catalog.getDeals().subscribe({
+      next: d => { this.deals.set(d); this.scheduleSpy(); },
+      error: () => {},
+    });
   }
 
-  setCategory(category: string): void {
-    this.activeCategory.set(category);
-  }
+  ngAfterViewInit(): void { this.scheduleSpy(); }
 
-  addToCart(item: MenuItem): void {
-    this.errorMessage.set('');
-    this.cartService.addItem(item).subscribe(result => {
-      if (result.success) {
-        this.addedItem.set(item.id);
-        setTimeout(() => this.addedItem.set(null), 1200);
-        return;
+  ngOnDestroy(): void { this.observer?.disconnect(); }
+
+  // ----- scroll-spy -----
+  private scheduleSpy(): void {
+    if (!this.isBrowser) return;
+    setTimeout(() => {
+      this.setupObserver();
+      if (this.pendingFragment) {
+        const frag = this.pendingFragment;
+        this.pendingFragment = null;
+        this.scrollToSection(frag, false);
       }
-
-      this.errorMessage.set(result.message);
     });
   }
 
-  getQuantity(foodItemId: number): number {
-    return this.cartService.getItemQuantity(foodItemId);
+  private setupObserver(): void {
+    this.observer?.disconnect();
+    const sections = Array.from(
+      this.host.nativeElement.querySelectorAll<HTMLElement>('[data-section]'),
+    );
+    if (!sections.length) return;
+
+    this.observer = new IntersectionObserver(
+      entries => {
+        if (this.suppressSpy) return;
+        // Pick the top-most section currently intersecting the trigger band.
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length) {
+          const slug = (visible[0].target as HTMLElement).dataset['section'];
+          if (slug) this.activeTab.set(slug);
+        }
+      },
+      { rootMargin: '-150px 0px -65% 0px', threshold: 0 },
+    );
+    sections.forEach(s => this.observer!.observe(s));
+  }
+
+  setTab(slug: string): void {
+    this.activeTab.set(slug);
+    this.scrollToSection(slug, true);
+  }
+
+  private scrollToSection(slug: string, smooth: boolean): void {
+    if (!this.isBrowser) return;
+    const el = this.host.nativeElement.querySelector<HTMLElement>(`[data-section="${slug}"]`);
+    if (!el) return;
+    this.suppressSpy = true;
+    this.activeTab.set(slug);
+    el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+    this.ensureTabVisible(slug);
+    setTimeout(() => (this.suppressSpy = false), smooth ? 700 : 200);
+  }
+
+  private ensureTabVisible(slug: string): void {
+    const tab = this.host.nativeElement.querySelector<HTMLElement>(`[data-tab="${slug}"]`);
+    tab?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
+
+  // ----- items -----
+  variantOf(item: MenuItem): Variant | null {
+    const id = this.chosenVariant()[item.id];
+    return item.variants.find(v => v.id === id) ?? item.variants[0] ?? null;
+  }
+  chooseVariant(item: MenuItem, variant: Variant): void {
+    this.chosenVariant.update(m => ({ ...m, [item.id]: variant.id }));
+  }
+  isChosen(item: MenuItem, variant: Variant): boolean {
+    return this.variantOf(item)?.id === variant.id;
+  }
+  addItem(item: MenuItem): void {
+    const v = this.variantOf(item);
+    if (!v) return;
+    this.cart.add({
+      key: `item:${v.id}`,
+      kind: 'item',
+      refId: v.id,
+      name: item.name,
+      variantLabel: v.label,
+      image: this.catalog.imageFor(item),
+      unitPrice: v.price,
+    });
+    this.flash(`${item.name}${v.label ? ' (' + v.label + ')' : ''} added`);
+  }
+
+  // ----- deals -----
+  startDeal(deal: Deal): void {
+    if (deal.requires_selection && deal.options.length) {
+      const first = deal.options[0].name;
+      this.dealPicks.set(Array.from({ length: deal.selection_count }, () => first));
+      this.activeDeal.set(deal);
+    } else {
+      this.addDeal(deal, []);
+    }
+  }
+  setPick(index: number, name: string): void {
+    this.dealPicks.update(p => { const n = [...p]; n[index] = name; return n; });
+  }
+  confirmDeal(): void {
+    const deal = this.activeDeal();
+    if (deal) this.addDeal(deal, this.dealPicks());
+    this.activeDeal.set(null);
+  }
+  closeDeal(): void { this.activeDeal.set(null); }
+
+  private addDeal(deal: Deal, picks: string[]): void {
+    this.cart.add({
+      key: picks.length ? `deal:${deal.id}:${picks.join('|')}` : `deal:${deal.id}`,
+      kind: 'deal',
+      refId: deal.id,
+      name: deal.name,
+      variantLabel: deal.selection_size,
+      image: this.catalog.imageFor({ image_url: deal.image_url, category_slug: 'pizza' }),
+      unitPrice: deal.price,
+      selections: picks.length ? picks : undefined,
+    });
+    this.flash(`${deal.name} added`);
+  }
+
+  private flash(msg: string): void {
+    this.toast.set(msg);
+    if (this.isBrowser) setTimeout(() => this.toast.set(''), 1600);
   }
 }

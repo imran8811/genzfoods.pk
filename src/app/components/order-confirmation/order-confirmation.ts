@@ -1,20 +1,21 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { UpperCasePipe } from '@angular/common';
 import { OrderService } from '../../services/order.service';
+import { PlacedOrder } from '../../models/catalog.model';
 
 @Component({
   selector: 'app-order-confirmation',
-  imports: [RouterLink, UpperCasePipe],
+  imports: [RouterLink, DecimalPipe],
   templateUrl: './order-confirmation.html',
   styleUrl: './order-confirmation.scss',
 })
 export class OrderConfirmation {
-  private orderService = inject(OrderService);
+  private orders = inject(OrderService);
 
-  order = this.orderService.latestOrder;
+  order = signal<PlacedOrder | null>(this.orders.getLastOrder());
 
-  formatPrice(price: number): string {
-    return 'Rs. ' + price.toLocaleString();
+  get paymentLabel(): string {
+    return this.order()?.paymentMethod === 'online' ? 'Online Payment' : 'Cash on Delivery';
   }
 }

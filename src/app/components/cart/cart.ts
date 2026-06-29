@@ -1,40 +1,36 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
+import { CatalogService } from '../../services/catalog.service';
 
 @Component({
   selector: 'app-cart',
-  imports: [RouterLink],
+  imports: [RouterLink, DecimalPipe],
   templateUrl: './cart.html',
   styleUrl: './cart.scss',
 })
-export class Cart implements OnInit {
-  cartService = inject(CartService);
+export class Cart {
+  private cart = inject(CartService);
+  private catalog = inject(CatalogService);
 
-  items = this.cartService.items;
-  subtotal = this.cartService.subtotal;
-  deliveryFee = this.cartService.deliveryFee;
-  total = this.cartService.total;
-  taxAmount = this.cartService.taxAmount;
-  itemCount = this.cartService.itemCount;
+  lines = this.cart.lines;
+  subtotal = this.cart.subtotal;
+  itemCount = this.cart.itemCount;
+  isEmpty = this.cart.isEmpty;
 
-  ngOnInit(): void {
-    this.cartService.fetchCart().subscribe();
+  deliveryFee = signal(0);
+  total = computed(() => this.subtotal() + this.deliveryFee());
+
+  constructor() {
+    this.catalog.getSite().subscribe({
+      next: s => this.deliveryFee.set(s.delivery_fee ?? 0),
+      error: () => {},
+    });
   }
 
-  increment(cartItemId: number, quantity: number): void {
-    this.cartService.updateQuantity(cartItemId, quantity + 1).subscribe();
-  }
-
-  decrement(cartItemId: number, quantity: number): void {
-    this.cartService.updateQuantity(cartItemId, quantity - 1).subscribe();
-  }
-
-  remove(cartItemId: number): void {
-    this.cartService.removeItem(cartItemId).subscribe();
-  }
-
-  formatPrice(price: number): string {
-    return 'Rs. ' + price.toLocaleString();
-  }
+  inc(key: string): void { this.cart.increment(key); }
+  dec(key: string): void { this.cart.decrement(key); }
+  remove(key: string): void { this.cart.remove(key); }
+  clear(): void { this.cart.clear(); }
 }

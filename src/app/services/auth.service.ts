@@ -8,6 +8,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  phone?: string | null;
+  role?: string;
 }
 
 interface AuthApiResponse {
@@ -40,11 +42,12 @@ export class AuthService {
     this.syncCurrentUser();
   }
 
-  signup(name: string, email: string, password: string): Observable<AuthActionResult> {
+  signup(name: string, email: string, password: string, phone = ''): Observable<AuthActionResult> {
     return this.api
       .post<AuthApiResponse>('/auth/register', {
         name,
         email,
+        phone,
         password,
         password_confirmation: password,
       })

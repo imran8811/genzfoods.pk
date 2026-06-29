@@ -1,4 +1,4 @@
-import { Component, signal, HostListener, inject } from '@angular/core';
+import { Component, computed, signal, HostListener, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
@@ -23,6 +23,7 @@ export class Header {
 
   isAuthenticated = this.authService.isAuthenticated;
   user = this.authService.user;
+  isAdmin = computed(() => this.authService.user()?.role === 'admin');
   cartCount = this.cartService.itemCount;
 
   @HostListener('window:scroll')

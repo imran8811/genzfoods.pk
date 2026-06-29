@@ -1,177 +1,75 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
-import { catchError, map, Observable, of, tap } from 'rxjs';
-import { CartItem, MenuItem } from '../models/menu-item.model';
-import { ApiService } from './api.service';
-import { AuthService } from './auth.service';
+import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { CartLine } from '../models/catalog.model';
 
-interface ApiFoodItem {
-  id: number;
-  name: string;
-  description: string | null;
-  price: string | number;
-  image_url: string | null;
-  category?: string;
-}
+const STORAGE_KEY = 'genz_cart_v2';
 
-interface ApiCartItem {
-  id: number;
-  food_item_id: number;
-  quantity: number;
-  food_item: ApiFoodItem;
-}
-
-interface ApiCartResponse {
-  cart: {
-    items: ApiCartItem[];
-    summary: {
-      items_count: number;
-      subtotal: string;
-    };
-  };
-}
-
-@Injectable({
-  providedIn: 'root',
-})
+/**
+ * Local, browser-persisted cart that understands sized items and deals.
+ * Backend sync is layered on in Phase 3 (checkout submits these lines).
+ */
+@Injectable({ providedIn: 'root' })
 export class CartService {
-  private api = inject(ApiService);
-  private authService = inject(AuthService);
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
 
-  private cartItems = signal<CartItem[]>([]);
-  private isLoading = signal(false);
+  private linesSig = signal<CartLine[]>(this.load());
 
-  items = computed(() => this.cartItems());
-  loading = computed(() => this.isLoading());
-  itemCount = computed(() => this.cartItems().reduce((sum, ci) => sum + ci.quantity, 0));
-  subtotal = computed(() => this.cartItems().reduce((sum, ci) => sum + ci.item.price * ci.quantity, 0));
-  deliveryFee = computed(() => {
-    const currentSubtotal = this.subtotal();
-    if (currentSubtotal <= 0) {
-      return 0;
+  lines = computed(() => this.linesSig());
+  itemCount = computed(() => this.linesSig().reduce((n, l) => n + l.quantity, 0));
+  subtotal = computed(() => this.linesSig().reduce((n, l) => n + l.unitPrice * l.quantity, 0));
+  isEmpty = computed(() => this.linesSig().length === 0);
+
+  /** Add a line; merges with an identical line (same key) by bumping quantity. */
+  add(line: Omit<CartLine, 'quantity'>, quantity = 1): void {
+    const lines = [...this.linesSig()];
+    const existing = lines.find(l => l.key === line.key);
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      lines.push({ ...line, quantity });
     }
-    return currentSubtotal >= 500 ? 0 : 40;
-  });
-  taxAmount = computed(() => Math.round(this.subtotal() * 0.05));
-  total = computed(() => this.subtotal() + this.deliveryFee() + this.taxAmount());
-
-  constructor() {
-    effect(() => {
-      if (this.authService.isAuthenticated()) {
-        this.fetchCart().subscribe();
-      } else {
-        this.cartItems.set([]);
-      }
-    });
+    this.commit(lines);
   }
 
-  fetchCart(): Observable<boolean> {
-    if (!this.authService.isAuthenticated()) {
-      this.cartItems.set([]);
-      return of(false);
-    }
-
-    this.isLoading.set(true);
-    return this.api.get<ApiCartResponse>('/cart', true).pipe(
-      tap(response => {
-        this.cartItems.set(this.mapApiCartItems(response.cart.items));
-        this.isLoading.set(false);
-      }),
-      map(() => true),
-      catchError(() => {
-        this.isLoading.set(false);
-        return of(false);
-      })
-    );
+  updateQuantity(key: string, quantity: number): void {
+    if (quantity <= 0) return this.remove(key);
+    const lines = this.linesSig().map(l => (l.key === key ? { ...l, quantity } : l));
+    this.commit(lines);
   }
 
-  addItem(item: MenuItem): Observable<{ success: boolean; message: string }> {
-    if (!this.authService.isAuthenticated()) {
-      return of({ success: false, message: 'Please login to add items to cart.' });
-    }
-
-    return this.api
-      .post<ApiCartResponse & { message: string }>(
-        '/cart/items',
-        { food_item_id: item.id, quantity: 1 },
-        true
-      )
-      .pipe(
-        tap(response => this.cartItems.set(this.mapApiCartItems(response.cart.items))),
-        map(response => ({ success: true, message: response.message || 'Item added to cart.' })),
-        catchError(error =>
-          of({
-            success: false,
-            message: this.api.getErrorMessage(error, 'Unable to add item to cart.'),
-          })
-        )
-      );
+  increment(key: string): void {
+    const l = this.linesSig().find(x => x.key === key);
+    if (l) this.updateQuantity(key, l.quantity + 1);
   }
 
-  removeItem(cartItemId: number): Observable<boolean> {
-    if (!this.authService.isAuthenticated()) {
-      return of(false);
-    }
-
-    return this.api.delete<ApiCartResponse>(`/cart/items/${cartItemId}`, true).pipe(
-      tap(response => this.cartItems.set(this.mapApiCartItems(response.cart.items))),
-      map(() => true),
-      catchError(() => of(false))
-    );
+  decrement(key: string): void {
+    const l = this.linesSig().find(x => x.key === key);
+    if (l) this.updateQuantity(key, l.quantity - 1);
   }
 
-  updateQuantity(cartItemId: number, quantity: number): Observable<boolean> {
-    if (!this.authService.isAuthenticated()) {
-      return of(false);
-    }
-
-    if (quantity <= 0) {
-      return this.removeItem(cartItemId);
-    }
-
-    return this.api.patch<ApiCartResponse>(`/cart/items/${cartItemId}`, { quantity }, true).pipe(
-      tap(response => this.cartItems.set(this.mapApiCartItems(response.cart.items))),
-      map(() => true),
-      catchError(() => of(false))
-    );
+  remove(key: string): void {
+    this.commit(this.linesSig().filter(l => l.key !== key));
   }
 
-  clearCart(): Observable<boolean> {
-    if (!this.authService.isAuthenticated()) {
-      this.cartItems.set([]);
-      return of(true);
+  clear(): void {
+    this.commit([]);
+  }
+
+  private commit(lines: CartLine[]): void {
+    this.linesSig.set(lines);
+    if (this.isBrowser) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(lines)); } catch { /* ignore */ }
     }
-
-    return this.api.delete<ApiCartResponse>('/cart/clear', true).pipe(
-      tap(response => this.cartItems.set(this.mapApiCartItems(response.cart.items))),
-      map(() => true),
-      catchError(() => of(false))
-    );
   }
 
-  getItemQuantity(foodItemId: number): number {
-    return this.cartItems().find(ci => ci.item.id === foodItemId)?.quantity ?? 0;
-  }
-
-  private mapApiCartItems(items: ApiCartItem[]): CartItem[] {
-    return items.map(ci => {
-      const price = Number(ci.food_item.price);
-      const menuItem: MenuItem = {
-        id: ci.food_item.id,
-        name: ci.food_item.name,
-        description: ci.food_item.description ?? 'Freshly prepared and served hot.',
-        price,
-        displayPrice: `Rs. ${price.toLocaleString()}`,
-        image:
-          ci.food_item.image_url ||
-          'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop',
-        category: ci.food_item.category ?? 'Menu',
-      };
-
-      return {
-        id: ci.id,
-        item: menuItem,
-        quantity: ci.quantity,
-      };
-    });
+  private load(): CartLine[] {
+    if (!this.isBrowser) return [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as CartLine[]) : [];
+    } catch {
+      return [];
+    }
   }
 }

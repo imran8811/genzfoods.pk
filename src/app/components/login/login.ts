@@ -1,5 +1,5 @@
-import { Component, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 
@@ -10,12 +10,16 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './login.scss',
 })
 export class Login {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
   email = '';
   password = '';
   errorMessage = signal('');
   loading = signal(false);
 
-  constructor(private authService: AuthService, private router: Router) { }
+  private redirect = this.route.snapshot.queryParamMap.get('redirect') ?? '/';
 
   onSubmit() {
     this.errorMessage.set('');
@@ -28,7 +32,7 @@ export class Login {
     this.loading.set(true);
     this.authService.login(this.email, this.password).subscribe(result => {
       if (result.success) {
-        this.router.navigate(['/']);
+        this.router.navigateByUrl(this.redirect);
       } else {
         this.errorMessage.set(result.message);
       }

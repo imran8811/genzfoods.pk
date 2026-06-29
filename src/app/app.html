@@ -1,5 +1,5 @@
-<app-header />
+@if (showChrome()) { <app-header /> }
 <main>
     <router-outlet />
 </main>
-<app-footer />
+@if (showChrome()) { <app-footer /> }

@@ -2,6 +2,7 @@ import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -11,7 +12,7 @@ export class ApiService {
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 
-  private readonly baseUrl = 'https://api.genzfoods.pk/api/v1';
+  private readonly baseUrl = environment.apiBaseUrl;
 
   get<T>(path: string, authenticated = false): Observable<T> {
     return this.http.get<T>(`${this.baseUrl}${path}`, {

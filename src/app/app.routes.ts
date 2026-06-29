@@ -9,6 +9,13 @@ import { Cart } from './components/cart/cart';
 import { Checkout } from './components/checkout/checkout';
 import { OrderConfirmation } from './components/order-confirmation/order-confirmation';
 import { guestGuard } from './guards/auth.guard';
+import { adminGuard } from './guards/admin.guard';
+import { AdminLayout } from './components/admin/admin-layout/admin-layout';
+import { AdminDashboard } from './components/admin/dashboard/admin-dashboard';
+import { AdminCategories } from './components/admin/categories/admin-categories';
+import { AdminItems } from './components/admin/items/admin-items';
+import { AdminDeals } from './components/admin/deals/admin-deals';
+import { AdminOrders } from './components/admin/orders/admin-orders';
 
 export const routes: Routes = [
     {
@@ -50,5 +57,17 @@ export const routes: Routes = [
         path: "reset-password",
         component: ResetPassword,
         canActivate: [guestGuard]
+    },
+    {
+        path: "admin",
+        component: AdminLayout,
+        canActivate: [adminGuard],
+        children: [
+            { path: "", component: AdminDashboard },
+            { path: "categories", component: AdminCategories },
+            { path: "items", component: AdminItems },
+            { path: "deals", component: AdminDeals },
+            { path: "orders", component: AdminOrders }
+        ]
     }
 ];
