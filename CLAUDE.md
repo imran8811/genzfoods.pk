@@ -1,36 +1,35 @@
-# genz-web — Gen Z Foods Public Website
+# genz-web — GEN Z Foods Public Website
 
-The main public website, **genzfoods.pk**. Talks to
-[`genz-web-apis`](../genz-web-apis) for backend data.
+The customer-facing ordering website (genzfoods.pk). Talks to
+[`genz-web-apis`](../genz-web-apis) for all data.
 
-- **Stack:** Angular 21 with **SSR** (server-side rendering via Angular SSR +
-  Express 5). TypeScript 5.9. Styling in SCSS.
-- **Testing:** Vitest (+ jsdom).
-- **API access:** via `src/app/services/api.service.ts`.
+- **Stack:** Angular 21 (standalone components, signals) + **SSR** (Angular SSR + Express 5), TypeScript 5.9, SCSS.
+- **Runs on:** `http://localhost:4200` (`npm start`). API base from `src/environments/environment.ts` → `http://localhost:8000/api/v1` (prod swap via `environment.prod.ts`).
+- **Brand:** name is **"GEN Z Foods"** (GEN all caps). Design = "Bold & Youthful": near-black bg, logo **red `--red:#ff1f2d`** + **lemon-yellow `--yellow:#ffe000`** accents, `Anton` display font + `Outfit` body. Single yellow token site-wide (tuned to the logo). Tokens + shared components in `src/styles.scss`.
 
-## Layout
-
-- `src/app/` — application root: `app.ts`, `app.routes.ts`,
-  `app.routes.server.ts`, `app.config.ts` / `app.config.server.ts`.
-- `src/app/components/`, `services/`, `guards/`, `models/` — feature code.
-- `src/main.ts` (browser), `src/main.server.ts` + `src/server.ts` (SSR/Express).
-- `src/styles.scss`, `public/` — global styles and static assets.
-
-## Common commands
-
+## Run / build
 ```bash
 npm install
-npm start                    # ng serve (dev server)
-npm run build                # npx ng build
-npm run watch                # ng build --watch (development config)
-npm test                     # ng test (Vitest)
-npm run serve:ssr:genz-web   # run the built SSR server (node dist/.../server.mjs)
+npm start                    # ng serve → localhost:4200
+npx ng build --configuration development   # fast build to typecheck (no budgets)
 ```
+Component SCSS budget: 12kB max each — keep shared styles in global `styles.scss`.
+
+## Structure that matters
+- `services/`: `api.service` (env base URL + Bearer token `genz_api_token`), `catalog.service` (/site, /menu, /deals), `cart.service` (**local, signal + localStorage** cart; supports sized items & deals), `order.service` (POSTs /checkout), `auth.service` (token auth, stores user under `genz_current_user`).
+- `models/catalog.model.ts` — Category/MenuItem/Variant/Deal/CartLine/PlacedOrder.
+- `components/`: home, menu, cart, checkout, order-confirmation, header, footer, login/signup/forgot/reset (auth). **No admin** (removed — menu is managed in the RMS).
+- **Menu page** = continuous scroll-spy (all categories stacked, sticky tabs highlight current section via IntersectionObserver), size selectors, deal-builder modal, sticky cart bar.
+
+## Flows
+- Browse → add (size/deal) → local cart → checkout. Checkout **requires login** (redirects to `/login?redirect=/checkout`, param preserved across login↔signup). Logged-in checkout pre-fills name/phone from the account.
+- Checkout posts to `/checkout`; backend re-prices and creates the order; confirmation shows the real order number.
+
+## Build status
+- ✅ Built: public site, menu (scroll-spy + sizes + deals), cart/checkout/orders, auth.
+- ⏳ Pending: online-payment UI once the backend gateway stub lands (checkout already has COD/online radio).
+- Possible add: "My Orders" page (backend `/orders` exists).
 
 ## Conventions
-
-- Standalone Angular components + Angular Router; route guards in `guards/`.
-- Code is SSR-aware — guard browser-only APIs (`window`, `localStorage`) for the
-  server render path.
-- Prettier config lives in `package.json`: 100 col, single quotes, Angular HTML
-  parser. Format before committing.
+- Signals + standalone components. SSR-aware: guard `window`/`localStorage` (cart/auth/order services already do).
+- Add pipes (`DecimalPipe` etc.) to each component's `imports`. Prettier: 100 col, single quotes.

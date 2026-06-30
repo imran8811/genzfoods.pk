@@ -10,9 +10,6 @@
       <a routerLink="/menu" fragment="deals" (click)="closeMenu()">Deals</a>
 
       <div class="nav-cta">
-        @if (isAdmin()) {
-          <a routerLink="/admin" class="btn btn-yellow btn-sm" (click)="closeMenu()">Admin</a>
-        }
         @if (isAuthenticated()) {
           <span class="hello">Hi, {{ user()?.name }}</span>
           <button class="btn btn-ghost btn-sm" (click)="logout()">Logout</button>
