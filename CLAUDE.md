@@ -25,8 +25,16 @@ Component SCSS budget: 12kB max each — keep shared styles in global `styles.sc
 - Browse → add (size/deal) → local cart → checkout. Checkout **requires login** (redirects to `/login?redirect=/checkout`, param preserved across login↔signup). Logged-in checkout pre-fills name/phone from the account.
 - Checkout posts to `/checkout`; backend re-prices and creates the order; confirmation shows the real order number.
 
+## Menu images (from Gen Z Admin)
+Menu/deal **images** originate in [`genz-admin`](../genz-admin) (source of truth), flow through
+`genz-web-apis` (which syncs from `genz-admin-apis`) as `image_url`, and render on the menu/deal
+cards (`components/menu/menu.html` → `.media-img`, falling back to the emoji placeholder when an
+item has no image). Re-uploads refresh automatically via the `?v=` cache-buster on the URL.
+(Today the menu is still fetched via `genz-web-apis` rather than directly from `genz-admin-apis`
+because checkout is keyed to web-apis `variant_id`/`deal_id` — see the root `CLAUDE.md` note.)
+
 ## Build status
-- ✅ Built: public site, menu (scroll-spy + sizes + deals), cart/checkout/orders, auth.
+- ✅ Built: public site, menu (scroll-spy + sizes + deals + **item/deal images**), cart/checkout/orders, auth.
 - ⏳ Pending: online-payment UI once the backend gateway stub lands (checkout already has COD/online radio).
 - Possible add: "My Orders" page (backend `/orders` exists).
 

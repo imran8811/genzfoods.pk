@@ -31,7 +31,11 @@
                 <div class="item-media">
                   @if (item.is_signature) { <span class="badge badge-signature media-badge">Signature</span> }
                   @else if (item.is_special) { <span class="badge badge-special media-badge">Special</span> }
-                  <span class="media-emoji">{{ cat.type === 'sized' ? '🍕' : '🍔' }}</span>
+                  @if (item.image_url) {
+                    <img class="media-img" [src]="item.image_url" [alt]="item.name" loading="lazy" />
+                  } @else {
+                    <span class="media-emoji">{{ cat.type === 'sized' ? '🍕' : '🍔' }}</span>
+                  }
                 </div>
                 <div class="item-body">
                   <h3>{{ item.name }}</h3>
@@ -67,7 +71,11 @@
                 <div class="card item-card fade-up">
                   <div class="item-media deal-media">
                     @if (deal.tag) { <span class="badge badge-special media-badge">{{ deal.tag }}</span> }
-                    <span class="media-emoji">🎁</span>
+                    @if (deal.image_url) {
+                      <img class="media-img" [src]="deal.image_url" [alt]="deal.name" loading="lazy" />
+                    } @else {
+                      <span class="media-emoji">🎁</span>
+                    }
                   </div>
                   <div class="item-body">
                     <h3>{{ deal.name }}</h3>
