@@ -32,7 +32,7 @@
 
     /* Type */
     --font: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --display: 'Anton', 'Outfit', sans-serif;
+    --display: 'Roboto', 'Outfit', sans-serif;
 
     /* Layout */
     --container: 1200px;
@@ -80,7 +80,7 @@ main { min-height: 60vh; }
 /* ---------- Display / headings ---------- */
 .display {
     font-family: var(--display);
-    font-weight: 400;
+    font-weight: 900;
     letter-spacing: 0.5px;
     line-height: 0.95;
     text-transform: uppercase;
@@ -188,7 +188,7 @@ main { min-height: 60vh; }
 }
 .section-head h2 {
     font-family: var(--display);
-    font-weight: 400;
+    font-weight: 900;
     font-size: clamp(2rem, 5vw, 3.25rem);
     text-transform: uppercase;
     line-height: 1;
