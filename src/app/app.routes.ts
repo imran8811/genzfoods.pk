@@ -32,6 +32,10 @@ export const routes: Routes = [
         component: OrderConfirmation
     },
     {
+        path: "order/:number",
+        component: OrderConfirmation
+    },
+    {
         path: "login",
         component: Login,
         canActivate: [guestGuard]

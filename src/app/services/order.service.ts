@@ -70,7 +70,26 @@ export class OrderService {
     }
   }
 
-  private toPlacedOrder(order: ApiOrder, delivery: DeliveryDetails): PlacedOrder {
+  /** Fetch one of the current user's orders by number (for the /order/:number page). */
+  track(orderNumber: string): Observable<PlacedOrder> {
+    return this.api.get<ApiOrder>(`/orders/track/${orderNumber}`, true).pipe(
+      map((order) => {
+        const s = order.shipping;
+        const delivery: DeliveryDetails = {
+          recipient_name: s?.name ?? '',
+          phone: s?.phone ?? '',
+          address_line_1: s?.address_line_1 ?? '',
+          area: s?.area ?? '',
+          city: s?.city ?? '',
+          landmark: s?.landmark ?? '',
+          notes: '',
+        };
+        return this.toPlacedOrder(order, delivery, false);
+      }),
+    );
+  }
+
+  private toPlacedOrder(order: ApiOrder, delivery: DeliveryDetails, persist = true): PlacedOrder {
     const lines: CartLine[] = order.items.map((it, i) => ({
       key: `o-${i}`,
       kind: it.selections && it.selections.length ? 'deal' : 'item',
@@ -94,7 +113,7 @@ export class OrderService {
       placedAt: order.placed_at ?? new Date().toISOString(),
     };
 
-    if (this.isBrowser) {
+    if (persist && this.isBrowser) {
       try { localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(placed)); } catch { /* ignore */ }
     }
     return placed;

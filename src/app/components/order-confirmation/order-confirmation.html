@@ -1,6 +1,10 @@
 <section class="confirmation-page">
   <div class="container">
-    @if (order(); as o) {
+    @if (loading()) {
+      <div class="card confirm">
+        <h2>Loading your order…</h2>
+      </div>
+    } @else if (order(); as o) {
       <div class="card confirm fade-up">
         <div class="check">✓</div>
         <h1 class="display">Order <span class="text-yellow">Confirmed!</span></h1>
@@ -35,8 +39,10 @@
       </div>
     } @else {
       <div class="card confirm">
-        <h2>No recent order found</h2>
-        <p class="sub">Looks like you haven't placed an order yet.</p>
+        <h2>{{ notFound() ? 'Order not found' : 'No recent order found' }}</h2>
+        <p class="sub">
+          {{ notFound() ? "We couldn't find that order on your account." : "Looks like you haven't placed an order yet." }}
+        </p>
         <a routerLink="/menu" class="btn btn-primary">Browse Menu</a>
       </div>
     }
