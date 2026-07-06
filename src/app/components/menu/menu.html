@@ -22,11 +22,11 @@
       <div class="center loading"><div class="spinner"></div><p>Loading menu…</p></div>
     } @else {
       <!-- ===== All categories, stacked ===== -->
-      @for (cat of categories(); track cat.id) {
+      @for (cat of categories(); track cat.slug) {
         <section class="menu-section" [id]="cat.slug" [attr.data-section]="cat.slug">
           <h2 class="group-title">{{ cat.name }}</h2>
           <div class="grid">
-            @for (item of cat.items; track item.id) {
+            @for (item of cat.items; track item.slug) {
               <div class="card item-card fade-up">
                 <div class="item-media">
                   @if (item.is_signature) { <span class="badge badge-signature media-badge">Signature</span> }
@@ -43,7 +43,7 @@
 
                   @if (item.variants.length > 1) {
                     <div class="sizes">
-                      @for (v of item.variants; track v.id) {
+                      @for (v of item.variants; track v.label) {
                         <button class="size" [class.on]="isChosen(item, v)" (click)="chooseVariant(item, v)">{{ v.label }}</button>
                       }
                     </div>
@@ -67,7 +67,7 @@
           @for (group of dealGroups(); track group.name) {
             <h3 class="sub-title">{{ group.name }}</h3>
             <div class="grid">
-              @for (deal of group.items; track deal.id) {
+              @for (deal of group.items; track deal.slug) {
                 <div class="card item-card fade-up">
                   <div class="item-media deal-media">
                     @if (deal.tag) { <span class="badge badge-special media-badge">{{ deal.tag }}</span> }
@@ -128,7 +128,7 @@
           <div class="field">
             <label>Pizza {{ $index + 1 }}</label>
             <select class="input" [ngModel]="pick" (ngModelChange)="setPick($index, $event)">
-              @for (opt of deal.options; track opt.id) {
+              @for (opt of deal.options; track opt.slug) {
                 <option [value]="opt.name">{{ opt.name }}</option>
               }
             </select>

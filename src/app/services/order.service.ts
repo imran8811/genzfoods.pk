@@ -43,10 +43,10 @@ export class OrderService {
   }): Observable<PlacedOrder> {
     const items = input.lines
       .filter(l => l.kind === 'item')
-      .map(l => ({ variant_id: l.refId, quantity: l.quantity }));
+      .map(l => ({ item_slug: l.itemSlug, size: l.size ?? null, quantity: l.quantity }));
     const deals = input.lines
       .filter(l => l.kind === 'deal')
-      .map(l => ({ deal_id: l.refId, quantity: l.quantity, selections: l.selections ?? [] }));
+      .map(l => ({ deal_slug: l.dealSlug, quantity: l.quantity, selections: l.selections ?? [] }));
 
     const payload = {
       items,
@@ -93,7 +93,6 @@ export class OrderService {
     const lines: CartLine[] = order.items.map((it, i) => ({
       key: `o-${i}`,
       kind: it.selections && it.selections.length ? 'deal' : 'item',
-      refId: 0,
       name: it.name,
       variantLabel: it.variant_label,
       image: null,

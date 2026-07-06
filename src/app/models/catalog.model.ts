@@ -15,13 +15,11 @@ export interface SiteInfo {
 }
 
 export interface Variant {
-  id: number;
-  label: string | null;
+  label: string | null; // size label; null = single-price item
   price: number;
 }
 
 export interface MenuItem {
-  id: number;
   name: string;
   slug: string;
   description: string | null;
@@ -35,7 +33,6 @@ export interface MenuItem {
 }
 
 export interface Category {
-  id: number;
   name: string;
   slug: string;
   type: 'single' | 'sized';
@@ -45,13 +42,11 @@ export interface Category {
 }
 
 export interface DealOption {
-  id: number;
   name: string;
   slug: string;
 }
 
 export interface Deal {
-  id: number;
   name: string;
   slug: string;
   group: string | null;
@@ -71,7 +66,9 @@ export interface Deal {
 export interface CartLine {
   key: string;                 // unique signature for merging
   kind: 'item' | 'deal';
-  refId: number;               // variant id (item) or deal id (deal)
+  itemSlug?: string;           // when kind === 'item'
+  size?: string | null;        // when kind === 'item' (variant/size label)
+  dealSlug?: string;           // when kind === 'deal'
   name: string;
   variantLabel: string | null;
   image: string | null;

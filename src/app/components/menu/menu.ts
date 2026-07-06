@@ -30,7 +30,8 @@ export class Menu implements OnInit, AfterViewInit, OnDestroy {
   loading = signal(true);
   activeTab = signal<string>('');
 
-  private chosenVariant = signal<Record<number, number>>({});
+  // item slug -> chosen size label ('' for single-price items)
+  private chosenVariant = signal<Record<string, string>>({});
   toast = signal<string>('');
 
   activeDeal = signal<Deal | null>(null);
@@ -139,22 +140,23 @@ export class Menu implements OnInit, AfterViewInit, OnDestroy {
 
   // ----- items -----
   variantOf(item: MenuItem): Variant | null {
-    const id = this.chosenVariant()[item.id];
-    return item.variants.find(v => v.id === id) ?? item.variants[0] ?? null;
+    const label = this.chosenVariant()[item.slug];
+    return item.variants.find(v => (v.label ?? '') === label) ?? item.variants[0] ?? null;
   }
   chooseVariant(item: MenuItem, variant: Variant): void {
-    this.chosenVariant.update(m => ({ ...m, [item.id]: variant.id }));
+    this.chosenVariant.update(m => ({ ...m, [item.slug]: variant.label ?? '' }));
   }
   isChosen(item: MenuItem, variant: Variant): boolean {
-    return this.variantOf(item)?.id === variant.id;
+    return this.variantOf(item)?.label === variant.label;
   }
   addItem(item: MenuItem): void {
     const v = this.variantOf(item);
     if (!v) return;
     this.cart.add({
-      key: `item:${v.id}`,
+      key: `item:${item.slug}:${v.label ?? ''}`,
       kind: 'item',
-      refId: v.id,
+      itemSlug: item.slug,
+      size: v.label,
       name: item.name,
       variantLabel: v.label,
       image: this.catalog.imageFor(item),
@@ -185,9 +187,9 @@ export class Menu implements OnInit, AfterViewInit, OnDestroy {
 
   private addDeal(deal: Deal, picks: string[]): void {
     this.cart.add({
-      key: picks.length ? `deal:${deal.id}:${picks.join('|')}` : `deal:${deal.id}`,
+      key: picks.length ? `deal:${deal.slug}:${picks.join('|')}` : `deal:${deal.slug}`,
       kind: 'deal',
-      refId: deal.id,
+      dealSlug: deal.slug,
       name: deal.name,
       variantLabel: deal.selection_size,
       image: this.catalog.imageFor({ image_url: deal.image_url, category_slug: 'pizza' }),
